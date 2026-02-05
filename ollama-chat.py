@@ -152,15 +152,34 @@ def chat_with_fallback(models, messages, stream, options) -> str:
     raise RuntimeError(last)
 
 
+# ---------- History ----------
+
+def save_history(path: Path, meta: dict, messages: list[dict]):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {"meta": meta, "messages": messages}
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def load_history(path: Path) -> tuple[dict, list[dict]]:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return raw.get("meta", {}), raw.get("messages", [])
+
+
 # ---------- Interactive ----------
 
 def interactive_chat(args):
-    messages = []
     meta = {
         "model_chain": args.model_chain,
         "options": args.options,
         "created_at": datetime.utcnow().isoformat(),
     }
+
+    if args.load:
+        print(f"📂 載入歷史紀錄：{args.load}")
+        _, messages = load_history(args.load)
+        print(f"✅ 載入 {len(messages)} 筆訊息")
+    else:
+        messages = []
 
     rag_index = None
     if args.rag:
@@ -174,6 +193,9 @@ def interactive_chat(args):
 
     if args.system:
         messages.append({"role": "system", "content": args.system})
+
+    if args.autosave and args.save:
+        print(f"💾 autosave 啟用：{args.save}")
 
     print("💬 進入對話模式（exit / quit 離開）\n")
 
@@ -201,6 +223,13 @@ def interactive_chat(args):
         )
         messages.append({"role": "assistant", "content": reply})
 
+        if args.autosave and args.save:
+            save_history(args.save, meta, messages)
+
+    if args.save:
+        save_history(args.save, meta, messages)
+        print(f"💾 對話已儲存：{args.save}")
+
 
 # ---------- Main ----------
 
@@ -219,7 +248,14 @@ def main():
     parser.add_argument("--top-p", type=float, dest="top_p")
     parser.add_argument("--num-ctx", type=int, dest="num_ctx")
 
+    parser.add_argument("--save", type=Path, help="儲存對話紀錄路徑")
+    parser.add_argument("--load", type=Path, help="載入歷史對話路徑")
+    parser.add_argument("--autosave", action="store_true", help="每輪自動儲存")
+
     args = parser.parse_args()
+
+    if args.autosave and not args.save:
+        args.save = Path("chats") / (datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".json")
 
     installed = set(get_installed_models())
     chain = [args.model] + args.fallback
