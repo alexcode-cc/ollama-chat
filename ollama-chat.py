@@ -4,6 +4,8 @@ import argparse
 import sys
 import json
 import math
+import threading
+import time
 from typing import Optional, List, Dict
 from datetime import datetime
 from pathlib import Path
@@ -105,9 +107,40 @@ def retrieve_context(
     return "\n---\n".join(t for _, t in scored[:k])
 
 
+# ---------- Spinner ----------
+
+class Spinner:
+    """等待時顯示旋轉動畫"""
+    FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+    def __init__(self, message: str = "思考中"):
+        self.message = message
+        self.running = False
+        self.thread = None
+
+    def _spin(self):
+        idx = 0
+        while self.running:
+            frame = self.FRAMES[idx % len(self.FRAMES)]
+            print(f"\r{frame} {self.message}...", end="", flush=True)
+            idx += 1
+            time.sleep(0.1)
+
+    def start(self):
+        self.running = True
+        self.thread = threading.Thread(target=self._spin, daemon=True)
+        self.thread.start()
+
+    def stop(self):
+        self.running = False
+        if self.thread:
+            self.thread.join(timeout=0.2)
+        print("\r" + " " * (len(self.message) + 10) + "\r", end="", flush=True)
+
+
 # ---------- Chat ----------
 
-def chat_once(model, messages, stream, options) -> str:
+def chat_once(model, messages, stream, options, spinner: Spinner = None) -> str:
     payload = {
         "model": model,
         "messages": messages,
@@ -125,14 +158,21 @@ def chat_once(model, messages, stream, options) -> str:
     resp.raise_for_status()
 
     if not stream:
-        return resp.json()["message"]["content"]
+        content = resp.json()["message"]["content"]
+        if spinner:
+            spinner.stop()
+        return content
 
     full = []
+    first_token = True
     for line in resp.iter_lines():
         if not line:
             continue
         data = json.loads(line)
         if "message" in data and "content" in data["message"]:
+            if first_token and spinner:
+                spinner.stop()
+                first_token = False
             token = data["message"]["content"]
             print(token, end="", flush=True)
             full.append(token)
@@ -145,7 +185,12 @@ def chat_with_fallback(models, messages, stream, options) -> str:
     for m in models:
         try:
             print(f"\n🔄 使用模型：{m}\n")
-            return chat_once(m, messages, stream, options)
+            spinner = Spinner("思考中")
+            spinner.start()
+            try:
+                return chat_once(m, messages, stream, options, spinner)
+            finally:
+                spinner.stop()
         except Exception as e:
             print(f"⚠️  {m} 失敗：{e}", file=sys.stderr)
             last = e
