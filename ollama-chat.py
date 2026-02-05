@@ -165,6 +165,121 @@ def load_history(path: Path) -> tuple[dict, list[dict]]:
     return raw.get("meta", {}), raw.get("messages", [])
 
 
+# ---------- Commands ----------
+
+HELP_TEXT = """
+📖 可用指令：
+
+  /help, /h        顯示此幫助訊息
+  /exit, /quit     退出程式
+
+  /clear           清除對話歷史（保留 system prompt）
+  /history         顯示對話歷史摘要
+  /redo            重新生成最後一次回應
+
+  /save [path]     儲存對話（可選路徑，預設時間戳）
+  /load <path>     載入對話歷史
+
+  /model           顯示當前模型鏈
+  /models          顯示所有可用模型
+  /status          顯示當前狀態
+""".strip()
+
+
+def cmd_help():
+    print(HELP_TEXT)
+
+
+def cmd_clear(messages: list, system_prompt: str | None) -> list:
+    messages.clear()
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    print("🗑️  對話歷史已清除")
+    return messages
+
+
+def cmd_history(messages: list):
+    user_count = sum(1 for m in messages if m["role"] == "user")
+    assistant_count = sum(1 for m in messages if m["role"] == "assistant")
+    system_count = sum(1 for m in messages if m["role"] == "system")
+    print(f"📊 對話歷史：{len(messages)} 筆訊息")
+    print(f"   system: {system_count}, user: {user_count}, assistant: {assistant_count}")
+    if messages:
+        last = messages[-1]
+        preview = last["content"][:50] + "..." if len(last["content"]) > 50 else last["content"]
+        print(f"   最後一筆 [{last['role']}]: {preview}")
+
+
+def cmd_redo(messages: list, args, rag_index) -> tuple[list, str | None]:
+    # 找到最後一個 user 訊息的位置
+    last_user_idx = None
+    for i in range(len(messages) - 1, -1, -1):
+        if messages[i]["role"] == "user":
+            last_user_idx = i
+            break
+
+    if last_user_idx is None:
+        print("⚠️  沒有可重新生成的對話")
+        return messages, None
+
+    # 移除最後一個 user 之後的所有訊息（包括 assistant 回應）
+    messages = messages[:last_user_idx + 1]
+
+    # 重新生成
+    reply = chat_with_fallback(
+        args.model_chain,
+        messages,
+        args.stream,
+        args.options,
+    )
+    messages.append({"role": "assistant", "content": reply})
+    return messages, reply
+
+
+def cmd_save(messages: list, meta: dict, path_arg: str | None):
+    if path_arg:
+        path = Path(path_arg)
+    else:
+        path = Path("chats") / (datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".json")
+    save_history(path, meta, messages)
+    print(f"💾 對話已儲存：{path}")
+
+
+def cmd_load(path_arg: str | None, system_prompt: str | None) -> tuple[list, bool]:
+    if not path_arg:
+        print("⚠️  請指定檔案路徑，例如：/load chats/xxx.json")
+        return [], False
+    path = Path(path_arg)
+    if not path.exists():
+        print(f"⚠️  檔案不存在：{path}")
+        return [], False
+    _, messages = load_history(path)
+    print(f"📂 已載入 {len(messages)} 筆訊息：{path}")
+    return messages, True
+
+
+def cmd_model(args):
+    print(f"🤖 模型鏈：{' → '.join(args.model_chain)}")
+
+
+def cmd_models():
+    models = get_installed_models()
+    print(f"📋 可用模型（{len(models)} 個）：")
+    for m in models:
+        print(f"   • {m}")
+
+
+def cmd_status(args, messages: list, rag_index):
+    print("📌 當前狀態：")
+    print(f"   模型鏈：{' → '.join(args.model_chain)}")
+    print(f"   Streaming：{'啟用' if args.stream else '停用'}")
+    print(f"   RAG：{'啟用 (' + str(len(rag_index)) + ' chunks)' if rag_index else '停用'}")
+    print(f"   Autosave：{'啟用 → ' + str(args.save) if args.autosave else '停用'}")
+    print(f"   對話訊息：{len(messages)} 筆")
+    if args.options:
+        print(f"   生成參數：{args.options}")
+
+
 # ---------- Interactive ----------
 
 def interactive_chat(args):
@@ -191,21 +306,60 @@ def interactive_chat(args):
         rag_index = build_rag_index(args.rag)
         print(f"✅ RAG chunks: {len(rag_index)}")
 
-    if args.system:
-        messages.append({"role": "system", "content": args.system})
+    system_prompt = args.system
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
 
     if args.autosave and args.save:
         print(f"💾 autosave 啟用：{args.save}")
 
-    print("💬 進入對話模式（exit / quit 離開）\n")
+    print("💬 進入對話模式（輸入 /help 查看指令）\n")
 
     while True:
-        user_input = input("🧑 > ").strip()
-        if user_input.lower() in {"exit", "quit"}:
+        try:
+            user_input = input("🧑 > ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print()
             break
+
         if not user_input:
             continue
 
+        # 指令處理
+        if user_input.startswith("/"):
+            parts = user_input.split(maxsplit=1)
+            cmd = parts[0].lower()
+            cmd_arg = parts[1] if len(parts) > 1 else None
+
+            if cmd in {"/exit", "/quit"}:
+                break
+            elif cmd in {"/help", "/h"}:
+                cmd_help()
+            elif cmd == "/clear":
+                messages = cmd_clear(messages, system_prompt)
+            elif cmd == "/history":
+                cmd_history(messages)
+            elif cmd == "/redo":
+                messages, reply = cmd_redo(messages, args, rag_index)
+                if reply and args.autosave and args.save:
+                    save_history(args.save, meta, messages)
+            elif cmd == "/save":
+                cmd_save(messages, meta, cmd_arg)
+            elif cmd == "/load":
+                loaded, ok = cmd_load(cmd_arg, system_prompt)
+                if ok:
+                    messages = loaded
+            elif cmd == "/model":
+                cmd_model(args)
+            elif cmd == "/models":
+                cmd_models()
+            elif cmd == "/status":
+                cmd_status(args, messages, rag_index)
+            else:
+                print(f"⚠️  未知指令：{cmd}（輸入 /help 查看可用指令）")
+            continue
+
+        # 正常對話
         if rag_index:
             context = retrieve_context(user_input, rag_index, args.rag_k)
             messages.append({
@@ -215,16 +369,20 @@ def interactive_chat(args):
 
         messages.append({"role": "user", "content": user_input})
 
-        reply = chat_with_fallback(
-            args.model_chain,
-            messages,
-            args.stream,
-            args.options,
-        )
-        messages.append({"role": "assistant", "content": reply})
+        try:
+            reply = chat_with_fallback(
+                args.model_chain,
+                messages,
+                args.stream,
+                args.options,
+            )
+            messages.append({"role": "assistant", "content": reply})
 
-        if args.autosave and args.save:
-            save_history(args.save, meta, messages)
+            if args.autosave and args.save:
+                save_history(args.save, meta, messages)
+        except Exception as e:
+            print(f"❌ 對話失敗：{e}", file=sys.stderr)
+            messages.pop()  # 移除剛加入的 user 訊息
 
     if args.save:
         save_history(args.save, meta, messages)
