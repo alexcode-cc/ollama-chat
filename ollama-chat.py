@@ -9,6 +9,7 @@ import time
 import atexit
 import csv
 import re
+import os
 from typing import Optional, List, Dict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,7 +32,7 @@ if READLINE_AVAILABLE:
     try:
         readline.read_history_file(HISTORY_FILE)
         readline.set_history_length(1000)
-    except FileNotFoundError:
+    except (FileNotFoundError, PermissionError):
         pass
     atexit.register(readline.write_history_file, HISTORY_FILE)
 
@@ -42,8 +43,33 @@ except ImportError:
     PDF_SUPPORT = False
 
 
-OLLAMA_HOST = "http://localhost:11434"
-EMBED_MODEL = "nomic-embed-text"
+# ---------- 設定檔載入 ----------
+
+def load_env(env_file: Path = Path(".env")) -> dict:
+    """載入 .env 檔案並回傳設定字典"""
+    env_vars = {}
+    if env_file.exists():
+        try:
+            with open(env_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    # 忽略空行和註解
+                    if not line or line.startswith("#"):
+                        continue
+                    # 解析 KEY=VALUE 格式
+                    if "=" in line:
+                        key, value = line.split("=", 1)
+                        env_vars[key.strip()] = value.strip()
+        except Exception as e:
+            print(f"⚠️  載入 .env 檔案失敗：{e}", file=sys.stderr)
+    return env_vars
+
+# 載入設定檔
+_env_config = load_env(Path(__file__).parent / ".env")
+
+# 從環境變數或 .env 檔案讀取設定,提供預設值
+OLLAMA_HOST = os.getenv("OLLAMA_HOST") or _env_config.get("OLLAMA_HOST", "http://localhost:11434")
+EMBED_MODEL = os.getenv("EMBED_MODEL") or _env_config.get("EMBED_MODEL", "nomic-embed-text")
 
 
 # ---------- Ollama helpers ----------
