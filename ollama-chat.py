@@ -382,8 +382,31 @@ def cmd_load(path_arg: str | None, system_prompt: str | None) -> tuple[list, boo
     return messages, True
 
 
-def cmd_model(args):
-    print(f"🤖 模型鏈：{' → '.join(args.model_chain)}")
+def cmd_model(args, meta, messages, cmd_arg: str | None):
+    if not cmd_arg:
+        print(f"🤖 模型鏈：{' → '.join(args.model_chain)}")
+        return
+
+    installed = get_installed_models()
+    if cmd_arg not in installed:
+        print(f"⚠️  模型 '{cmd_arg}' 不可用")
+        print(f"💡 使用 /models 查看可用模型")
+        return
+
+    # 切換前將當前對話儲存到既有路徑（避免數據遺失）
+    if args.autosave and args.save and args.save.exists():
+        save_history(args.save, meta, messages)
+
+    args.model_chain = [cmd_arg]
+    meta["model_chain"] = args.model_chain
+    print(f"🔄 已切換模型：{cmd_arg}")
+
+    # 自動生成的路徑需隨模型名更新
+    if args.autosave and getattr(args, '_save_is_auto', False):
+        safe_model_name = re.sub(r'[:\\/*?"<>|]', '-', cmd_arg)
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        args.save = Path("chats") / f"{safe_model_name}_{timestamp}.json"
+        print(f"💾 自動存檔路徑更新：{args.save}")
 
 
 def cmd_models():
@@ -493,7 +516,7 @@ def interactive_chat(args):
                 if ok:
                     messages = loaded
             elif cmd == "/model":
-                cmd_model(args)
+                cmd_model(args, meta, messages, cmd_arg)
             elif cmd == "/models":
                 cmd_models()
             elif cmd == "/status":
@@ -596,6 +619,7 @@ def main():
     args.model_chain = [m for m in chain if m in installed]
 
     # 處理 autosave 預設路徑
+    args._save_is_auto = False
     if args.autosave and not args.save:
         if args.load:
             # 使用 --load 時，autosave 儲存到同一檔案
@@ -607,6 +631,7 @@ def main():
             safe_model_name = re.sub(r'[:\\/*?"<>|]', '-', model_name)
             timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
             args.save = Path("chats") / f"{safe_model_name}_{timestamp}.json"
+            args._save_is_auto = True
 
     args.options = build_options(
         args.temperature,
