@@ -557,27 +557,36 @@ def interactive_chat(args):
 
 # ---------- Main ----------
 
+class _CountAction(argparse.Action):
+    """追蹤參數被設置的次數，用於檢測用戶是否覆蓋了腳本預設值"""
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values)
+        setattr(namespace, f'_{self.dest}_count',
+                getattr(namespace, f'_{self.dest}_count', 0) + 1)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Ollama Chat CLI with RAG",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 覆蓋預設參數範例（搭配啟動腳本使用）：
-  chat.sh --model deepseek-r1:8b      # 覆蓋預設模型
+  chat.sh --model deepseek-r1:8b      # 覆蓋模型（自動排除預設 fallback）
+  chat.sh --model x --fallback y      # 覆蓋模型並自訂 fallback 鏈
   chat.sh --no-stream                 # 取消 streaming
   chat.sh --no-autosave               # 取消自動儲存
   chat.sh --system "新的提示詞"       # 覆蓋系統提示詞
-  chat.sh --no-default-fallback       # 不使用預設 fallback 模型
+  chat.sh --no-default-fallback       # 明確排除預設 fallback 模型
         """,
     )
 
-    parser.add_argument("--model", default="llama3.1:8b")
+    parser.add_argument("--model", action=_CountAction, default="llama3.1:8b")
     parser.add_argument("--fallback", action="append", default=[],
-                        help="備援模型（可多個，追加到預設值之後）")
+                        help="備援模型（可多個）")
     parser.add_argument("--default-fallback", action="append", default=[],
                         help="預設備援模型（由啟動腳本設定）")
     parser.add_argument("--no-default-fallback", action="store_true",
-                        help="不使用預設 fallback 模型")
+                        help="明確排除預設 fallback 模型")
     parser.add_argument("--stream", action=argparse.BooleanOptionalAction, default=False,
                         help="啟用/停用流式輸出（--stream / --no-stream）")
     parser.add_argument("--system")
@@ -597,8 +606,12 @@ def main():
 
     args = parser.parse_args()
 
-    # 合併 fallback：用戶指定的 + 預設的（除非指定 --no-default-fallback）
-    if not args.no_default_fallback:
+    # 合併 fallback 邏輯：
+    #   - --model 被覆蓋（腳本＋用戶各傳一次）→ 自動排除 default-fallback
+    #   - --no-default-fallback → 明確排除 default-fallback
+    #   - 其它情況 → 合併用戶 fallback + 預設 fallback
+    _model_overridden = getattr(args, '_model_count', 0) > 1
+    if not args.no_default_fallback and not _model_overridden:
         args.fallback = args.fallback + args.default_fallback
 
     # 處理 --convert 參數（轉換後直接退出）
