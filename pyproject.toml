@@ -34,9 +34,6 @@ all = [
     "pypdf>=3.0.0",
 ]
 
-[project.scripts]
-ollama-chat = "ollama_chat:main"
-
 [project.urls]
 Homepage = "https://github.com/alex/ollama-chat"
 Repository = "https://github.com/alex/ollama-chat"
@@ -48,5 +45,5 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["."]
 
-[tool.uv]
-dev-dependencies = []
+[dependency-groups]
+dev = []
