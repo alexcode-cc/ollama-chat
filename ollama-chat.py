@@ -7,6 +7,7 @@ import math
 import threading
 import time
 import atexit
+import csv
 from typing import Optional, List, Dict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -231,6 +232,27 @@ def save_history(path: Path, meta: dict, messages: list[dict]):
 def load_history(path: Path) -> tuple[dict, list[dict]]:
     raw = json.loads(path.read_text(encoding="utf-8"))
     return raw.get("meta", {}), raw.get("messages", [])
+
+
+def convert_json_to_csv(json_path: Path) -> Path:
+    """將 JSON 對話記錄轉換為 CSV 格式"""
+    if not json_path.exists():
+        raise FileNotFoundError(f"檔案不存在：{json_path}")
+
+    meta, messages = load_history(json_path)
+
+    # 產生 CSV 檔案路徑（同檔名，副檔名改為 .csv）
+    csv_path = json_path.with_suffix(".csv")
+
+    with open(csv_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        # 寫入標題列
+        writer.writerow(["index", "role", "content"])
+        # 寫入對話記錄
+        for i, msg in enumerate(messages, 1):
+            writer.writerow([i, msg.get("role", ""), msg.get("content", "")])
+
+    return csv_path
 
 
 # ---------- Commands ----------
@@ -529,8 +551,22 @@ def main():
     parser.add_argument("--save", type=Path, help="儲存對話紀錄路徑")
     parser.add_argument("--load", type=Path, help="載入歷史對話路徑")
     parser.add_argument("--autosave", action="store_true", help="每輪自動儲存")
+    parser.add_argument("--convert", type=Path, help="將 JSON 對話記錄轉換為 CSV")
 
     args = parser.parse_args()
+
+    # 處理 --convert 參數（轉換後直接退出）
+    if args.convert:
+        try:
+            csv_path = convert_json_to_csv(args.convert)
+            print(f"✅ 轉換完成：{args.convert} → {csv_path}")
+        except FileNotFoundError as e:
+            print(f"❌ {e}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as e:
+            print(f"❌ 轉換失敗：{e}", file=sys.stderr)
+            sys.exit(1)
+        return
 
     if args.autosave and not args.save:
         if args.load:
