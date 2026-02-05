@@ -44,7 +44,11 @@ ollama pull nomic-embed-text
 ## 安裝
 
 ```bash
+# 基本安裝
 pip install requests
+
+# 完整安裝（含 PDF 支援）
+pip install requests pypdf
 ```
 
 將程式存成：
@@ -187,11 +191,13 @@ python ollama-chat.py \
 
 ### RAG 行為說明
 
-- 自動讀取 `.md` / `.txt`
+- 自動讀取 `.md` / `.txt` / `.pdf`
 - 切 chunk（約 500 字）
 - 使用 `nomic-embed-text` 做 embedding
 - cosine similarity 取 Top-K
 - 相關內容會注入 system context
+
+> PDF 支援需安裝 `pypdf`，程式會自動偵測並啟用
 
 ---
 
@@ -207,14 +213,13 @@ python ollama-chat.py \
 ## 已知限制
 
 - RAG index 目前為記憶體內（重啟需重建）
-- 僅支援 Markdown / TXT（PDF 尚未加入）
 - Chunk size 為字元近似（非 token 精準）
 
 ---
 
 ## Roadmap（形態進化）
 
-- 📄 PDF loader（pypdf）
+- ✅ PDF loader（pypdf）- 已完成
 - 🗄 SQLite / FAISS 向量索引
 - 🌐 FastAPI / Web UI / PWA
 - 👥 多使用者 / API Key

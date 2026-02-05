@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # 安裝依賴
-pip install requests
+pip install requests pypdf
 
 # 基本執行
 python ollama-chat.py
@@ -44,7 +44,15 @@ python ollama-chat.py \
 
 ## 架構設計
 
-### 單檔案結構
+### 模組結構
+
+```
+ollama-chat/
+├── ollama-chat.py    # 主程式
+└── pdf_loader.py     # PDF 文件讀取模組（可選）
+```
+
+### 主程式功能區塊
 
 `ollama-chat.py` 包含 4 大功能區塊：
 
@@ -52,6 +60,16 @@ python ollama-chat.py \
 2. **Embedding & RAG** - `embed_text()`, `cosine_similarity()`, `chunk_text()`, `load_documents()`, `build_rag_index()`, `retrieve_context()` - 文本向量化與檢索
 3. **Chat API** - `chat_once()`, `chat_with_fallback()` - 對話請求與 fallback 機制
 4. **交互式循環** - `interactive_chat()` - 主對話迴圈
+
+### PDF Loader 模組
+
+`pdf_loader.py` 提供 PDF 文件支援：
+
+- `is_available()` - 檢查 pypdf 是否已安裝
+- `load_pdf(path)` - 讀取單一 PDF 文件
+- `load_pdfs_from_dir(directory)` - 從目錄讀取所有 PDF
+
+主程式會自動偵測模組是否可用，若 pypdf 未安裝則降級為僅支援 Markdown/TXT。
 
 ### 關鍵設計模式
 
@@ -82,7 +100,6 @@ python ollama-chat.py \
 ## 已知限制
 
 - RAG 索引為純記憶體（重啟丟失）
-- 僅支援 Markdown / TXT 檔案（無 PDF）
 - Chunk size 為字元估算（非精準 token 計算）
 
 ## Git Commit 規範
