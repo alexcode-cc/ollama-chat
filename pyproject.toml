@@ -30,8 +30,12 @@ dependencies = [
 pdf = [
     "pypdf>=3.0.0",
 ]
+windows = [
+    "pyreadline3>=3.4.0",
+]
 all = [
     "pypdf>=3.0.0",
+    "pyreadline3>=3.4.0; sys_platform == 'win32'",
 ]
 
 [project.urls]

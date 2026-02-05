@@ -6,9 +6,32 @@ import json
 import math
 import threading
 import time
+import atexit
 from typing import Optional, List, Dict
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Readline 支援（行編輯、歷史記錄、方向鍵）
+try:
+    import readline
+    READLINE_AVAILABLE = True
+except ImportError:
+    try:
+        # Windows 需要 pyreadline3
+        import pyreadline3 as readline
+        READLINE_AVAILABLE = True
+    except ImportError:
+        READLINE_AVAILABLE = False
+
+# 設定輸入歷史檔案
+if READLINE_AVAILABLE:
+    HISTORY_FILE = Path.home() / ".ollama_chat_history"
+    try:
+        readline.read_history_file(HISTORY_FILE)
+        readline.set_history_length(1000)
+    except FileNotFoundError:
+        pass
+    atexit.register(readline.write_history_file, HISTORY_FILE)
 
 try:
     import pdf_loader
