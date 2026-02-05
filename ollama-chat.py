@@ -8,6 +8,12 @@ from typing import Optional, List, Dict
 from datetime import datetime
 from pathlib import Path
 
+try:
+    import pdf_loader
+    PDF_SUPPORT = pdf_loader.is_available()
+except ImportError:
+    PDF_SUPPORT = False
+
 
 OLLAMA_HOST = "http://localhost:11434"
 EMBED_MODEL = "nomic-embed-text"
@@ -70,6 +76,9 @@ def load_documents(path: Path) -> list[str]:
     for p in path.rglob("*"):
         if p.suffix.lower() in {".md", ".txt"} and p.is_file():
             docs.append(p.read_text(encoding="utf-8", errors="ignore"))
+    # PDF 支援
+    if PDF_SUPPORT:
+        docs.extend(pdf_loader.load_pdfs_from_dir(path))
     return docs
 
 
@@ -156,6 +165,10 @@ def interactive_chat(args):
     rag_index = None
     if args.rag:
         print("📚 建立 RAG index...")
+        if PDF_SUPPORT:
+            print("📄 PDF 支援：已啟用")
+        else:
+            print("📄 PDF 支援：未啟用（pip install pypdf）")
         rag_index = build_rag_index(args.rag)
         print(f"✅ RAG chunks: {len(rag_index)}")
 
