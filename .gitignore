@@ -46,6 +46,7 @@ htmlcov/
 .nox/
 
 # Logs
+logs/
 *.log
 
 # Local config

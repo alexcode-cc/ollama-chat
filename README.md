@@ -50,8 +50,8 @@ pip install requests
 將程式存成：
 
 ```bash
-ollama_chat.py
-chmod +x ollama_chat.py
+ollama-chat.py
+chmod +x ollama-chat.py
 ```
 
 ---
@@ -61,19 +61,19 @@ chmod +x ollama_chat.py
 ### 啟動聊天
 
 ```bash
-python ollama_chat.py
+python ollama-chat.py
 ```
 
 ### 指定模型
 
 ```bash
-python ollama_chat.py --model llama3.1:8b
+python ollama-chat.py --model llama3.1:8b
 ```
 
 ### 即時輸出（Streaming）
 
 ```bash
-python ollama_chat.py --stream
+python ollama-chat.py --stream
 ```
 
 ---
@@ -81,7 +81,7 @@ python ollama_chat.py --stream
 ## 生成參數調教
 
 ```bash
-python ollama_chat.py \
+python ollama-chat.py \
   --temperature 0.7 \
   --top-p 0.9 \
   --num-ctx 8192
@@ -98,7 +98,7 @@ python ollama_chat.py \
 ## System Prompt（角色設定）
 
 ```bash
-python ollama_chat.py \
+python ollama-chat.py \
   --system "你是一位資深資安顧問，回答請務實且附建議"
 ```
 
@@ -109,7 +109,7 @@ python ollama_chat.py \
 當主模型失敗（OOM / timeout / 500），會自動切換。
 
 ```bash
-python ollama_chat.py \
+python ollama-chat.py \
   --model llama3.1:8b \
   --fallback mistral:7b \
   --fallback qwen2.5:7b
@@ -130,19 +130,19 @@ python ollama_chat.py \
 ### 載入舊對話
 
 ```bash
-python ollama_chat.py --load chats/project.json
+python ollama-chat.py --load chats/project.json
 ```
 
 ### 存檔
 
 ```bash
-python ollama_chat.py --save chats/today.json
+python ollama-chat.py --save chats/today.json
 ```
 
 ### Autosave（每一輪即時寫檔）
 
 ```bash
-python ollama_chat.py \
+python ollama-chat.py \
   --save chats/long_session.json \
   --autosave
 ```
@@ -179,7 +179,7 @@ docs/
 ### 啟用 RAG
 
 ```bash
-python ollama_chat.py \
+python ollama-chat.py \
   --rag docs/ \
   --rag-k 4 \
   --system "請根據文件內容回答"

@@ -1,0 +1,131 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## 專案概述
+
+這是一個單檔案 Python CLI 應用，用於與本地 Ollama LLM 進行互動式對話，支援 Streaming、Fallback 模型鏈和 RAG（檢索增強生成）功能。
+
+## 常用指令
+
+```bash
+# 安裝依賴
+pip install requests
+
+# 基本執行
+python ollama-chat.py
+
+# 指定模型與啟用 Streaming
+python ollama-chat.py --model llama3.1:8b --stream
+
+# 使用 Fallback 模型鏈
+python ollama-chat.py --model llama3.1:8b --fallback mistral:7b --fallback gemma:7b
+
+# 啟用 RAG
+python ollama-chat.py --rag docs/ --rag-k 4
+
+# 完整配置範例
+python ollama-chat.py \
+  --model llama3.1:8b \
+  --fallback mistral:7b \
+  --stream \
+  --temperature 0.7 \
+  --top-p 0.9 \
+  --num-ctx 8192 \
+  --system "你是一位資深顧問" \
+  --rag docs/
+```
+
+## 系統需求
+
+- Python 3.10+
+- Ollama 在本機運行（localhost:11434）
+- 至少一個聊天模型和一個 embedding 模型（預設：nomic-embed-text）
+
+## 架構設計
+
+### 單檔案結構
+
+`ollama-chat.py` 包含 4 大功能區塊：
+
+1. **Ollama 助手** - `get_installed_models()`, `build_options()` - 查詢模型與構建參數
+2. **Embedding & RAG** - `embed_text()`, `cosine_similarity()`, `chunk_text()`, `load_documents()`, `build_rag_index()`, `retrieve_context()` - 文本向量化與檢索
+3. **Chat API** - `chat_once()`, `chat_with_fallback()` - 對話請求與 fallback 機制
+4. **交互式循環** - `interactive_chat()` - 主對話迴圈
+
+### 關鍵設計模式
+
+**Fallback 模型鏈**: 當主模型失敗時自動切換到備援模型，支援多層 fallback。
+
+**Streaming 輸出**: Token 級實時輸出，使用 `resp.iter_lines()` 逐行解析 NDJSON。
+
+**RAG 流程**:
+- 文件 → 分塊（~500 字元） → Embedding（Ollama API） → 記憶體索引
+- 查詢 → 向量化 → Cosine 相似度排序 → Top-K 注入 context
+
+**訊息歷史**: 保留完整對話歷史（system/user/assistant 訊息列表）用於多輪上下文。
+
+### 命令行參數
+
+| 參數 | 說明 | 預設值 |
+|------|------|--------|
+| `--model` | 主要聊天模型 | `llama3.1:8b` |
+| `--fallback` | 備援模型（可多個） | 無 |
+| `--stream` | 啟用流式輸出 | False |
+| `--system` | System prompt | 無 |
+| `--rag` | RAG 文件目錄 | 無 |
+| `--rag-k` | RAG 檢索結果數 | 4 |
+| `--temperature` | 生成溫度 | 模型預設 |
+| `--top-p` | 核心取樣比例 | 模型預設 |
+| `--num-ctx` | Context window 大小 | 模型預設 |
+
+## 已知限制
+
+- RAG 索引為純記憶體（重啟丟失）
+- 僅支援 Markdown / TXT 檔案（無 PDF）
+- Chunk size 為字元估算（非精準 token 計算）
+
+## Git Commit 規範
+
+遵循 AngularJS Git Commit Message Conventions，所有提交訊息使用**繁體中文**。
+
+### 格式
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Type 類型
+
+| Type | 說明 |
+|------|------|
+| `feat` | 新功能 |
+| `fix` | 修復 bug |
+| `docs` | 文檔變更 |
+| `style` | 格式調整（不影響程式碼運行） |
+| `refactor` | 重構（不新增功能也不修復 bug） |
+| `perf` | 性能優化 |
+| `test` | 新增或修改測試 |
+| `chore` | 建置過程或輔助工具的變動 |
+
+### 範例
+
+```
+feat(rag): 新增 PDF 文件支援
+
+使用 pypdf 庫解析 PDF 文件，支援多頁文件的文字提取與分塊處理。
+
+Closes #12
+```
+
+```
+fix(chat): 修正 streaming 模式下的編碼問題
+```
+
+```
+docs: 更新 README 安裝說明
+```
