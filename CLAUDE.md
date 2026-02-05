@@ -54,12 +54,14 @@ ollama-chat/
 
 ### 主程式功能區塊
 
-`ollama-chat.py` 包含 4 大功能區塊：
+`ollama-chat.py` 包含 6 大功能區塊：
 
 1. **Ollama 助手** - `get_installed_models()`, `build_options()` - 查詢模型與構建參數
 2. **Embedding & RAG** - `embed_text()`, `cosine_similarity()`, `chunk_text()`, `load_documents()`, `build_rag_index()`, `retrieve_context()` - 文本向量化與檢索
 3. **Chat API** - `chat_once()`, `chat_with_fallback()` - 對話請求與 fallback 機制
-4. **交互式循環** - `interactive_chat()` - 主對話迴圈
+4. **History** - `save_history()`, `load_history()` - 對話紀錄存取
+5. **Commands** - `cmd_*()` 系列函數 - 對話模式指令處理
+6. **交互式循環** - `interactive_chat()` - 主對話迴圈與指令分派
 
 ### PDF Loader 模組
 
@@ -96,6 +98,26 @@ ollama-chat/
 | `--temperature` | 生成溫度 | 模型預設 |
 | `--top-p` | 核心取樣比例 | 模型預設 |
 | `--num-ctx` | Context window 大小 | 模型預設 |
+| `--save` | 儲存對話紀錄路徑 | 無 |
+| `--load` | 載入歷史對話路徑 | 無 |
+| `--autosave` | 每輪自動儲存 | False |
+
+### 對話模式指令
+
+進入對話後可使用以下指令（以 `/` 開頭）：
+
+| 指令 | 說明 |
+|------|------|
+| `/help`, `/h` | 顯示幫助訊息 |
+| `/exit`, `/quit` | 退出程式 |
+| `/clear` | 清除對話歷史（保留 system prompt） |
+| `/history` | 顯示對話歷史摘要 |
+| `/redo` | 重新生成最後一次回應 |
+| `/save [path]` | 儲存對話（可選路徑，預設時間戳） |
+| `/load <path>` | 載入對話歷史 |
+| `/model` | 顯示當前模型鏈 |
+| `/models` | 顯示所有可用模型 |
+| `/status` | 顯示當前狀態 |
 
 ## 已知限制
 
