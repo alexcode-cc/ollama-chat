@@ -43,41 +43,49 @@ ollama pull nomic-embed-text
 
 ## 安裝
 
+本專案使用 [uv](https://docs.astral.sh/uv/) 管理依賴。
+
 ```bash
+# 安裝 uv（如尚未安裝）
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
 # 基本安裝
-pip install requests
+uv sync
 
 # 完整安裝（含 PDF 支援）
-pip install requests pypdf
-```
-
-將程式存成：
-
-```bash
-ollama-chat.py
-chmod +x ollama-chat.py
+uv sync --extra pdf
 ```
 
 ---
 
 ## 基本使用
 
-### 啟動聊天
+### 快速啟動（推薦）
 
 ```bash
-python ollama-chat.py
+# Linux / macOS
+./chat.sh
+
+# Windows PowerShell
+.\chat.ps1
+
+# Windows CMD
+chat.bat
 ```
 
-### 指定模型
+快速啟動腳本包含預設參數：模型鏈、Streaming、繁體中文、Autosave。
+
+### 手動執行
 
 ```bash
-python ollama-chat.py --model llama3.1:8b
-```
+# 啟動聊天
+uv run python ollama-chat.py
 
-### 即時輸出（Streaming）
+# 指定模型
+uv run python ollama-chat.py --model llama3.1:8b
 
-```bash
-python ollama-chat.py --stream
+# 即時輸出（Streaming）
+uv run python ollama-chat.py --stream
 ```
 
 ---
@@ -85,7 +93,7 @@ python ollama-chat.py --stream
 ## 生成參數調教
 
 ```bash
-python ollama-chat.py \
+uv run python ollama-chat.py \
   --temperature 0.7 \
   --top-p 0.9 \
   --num-ctx 8192
@@ -102,7 +110,7 @@ python ollama-chat.py \
 ## System Prompt（角色設定）
 
 ```bash
-python ollama-chat.py \
+uv run python ollama-chat.py \
   --system "你是一位資深資安顧問，回答請務實且附建議"
 ```
 
@@ -113,7 +121,7 @@ python ollama-chat.py \
 當主模型失敗（OOM / timeout / 500），會自動切換。
 
 ```bash
-python ollama-chat.py \
+uv run python ollama-chat.py \
   --model llama3.1:8b \
   --fallback mistral:7b \
   --fallback qwen2.5:7b
@@ -134,21 +142,23 @@ python ollama-chat.py \
 ### 載入舊對話
 
 ```bash
-python ollama-chat.py --load chats/project.json
+uv run python ollama-chat.py --load chats/project.json
 ```
 
 ### 存檔
 
 ```bash
-python ollama-chat.py --save chats/today.json
+uv run python ollama-chat.py --save chats/today.json
 ```
 
 ### Autosave（每一輪即時寫檔）
 
 ```bash
-python ollama-chat.py \
-  --save chats/long_session.json \
-  --autosave
+# 使用指定路徑
+uv run python ollama-chat.py --save chats/long_session.json --autosave
+
+# 或使用預設時間戳路徑（chats/YYYY-MM-DD-HH-mm-ss.json）
+uv run python ollama-chat.py --autosave
 ```
 
 ### JSON 格式
@@ -183,7 +193,7 @@ docs/
 ### 啟用 RAG
 
 ```bash
-python ollama-chat.py \
+uv run python ollama-chat.py \
   --rag docs/ \
   --rag-k 4 \
   --system "請根據文件內容回答"

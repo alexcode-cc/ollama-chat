@@ -9,23 +9,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 常用指令
 
 ```bash
-# 安裝依賴
-pip install requests pypdf
+# 安裝依賴（使用 uv）
+uv sync              # 基本安裝
+uv sync --extra pdf  # 含 PDF 支援
+
+# 快速啟動（推薦）
+./chat.sh            # Linux / macOS
+.\chat.ps1           # Windows PowerShell
+chat.bat             # Windows CMD
 
 # 基本執行
-python ollama-chat.py
+uv run python ollama-chat.py
 
 # 指定模型與啟用 Streaming
-python ollama-chat.py --model llama3.1:8b --stream
+uv run python ollama-chat.py --model llama3.1:8b --stream
 
 # 使用 Fallback 模型鏈
-python ollama-chat.py --model llama3.1:8b --fallback mistral:7b --fallback gemma:7b
+uv run python ollama-chat.py --model llama3.1:8b --fallback mistral:7b --fallback gemma:7b
 
 # 啟用 RAG
-python ollama-chat.py --rag docs/ --rag-k 4
+uv run python ollama-chat.py --rag docs/ --rag-k 4
 
 # 完整配置範例
-python ollama-chat.py \
+uv run python ollama-chat.py \
   --model llama3.1:8b \
   --fallback mistral:7b \
   --stream \
@@ -49,7 +55,11 @@ python ollama-chat.py \
 ```
 ollama-chat/
 ├── ollama-chat.py    # 主程式
-└── pdf_loader.py     # PDF 文件讀取模組（可選）
+├── pdf_loader.py     # PDF 文件讀取模組（可選）
+├── pyproject.toml    # uv 依賴配置
+├── chat.sh           # Linux/macOS 啟動腳本
+├── chat.ps1          # PowerShell 啟動腳本
+└── chat.bat          # Windows CMD 啟動腳本
 ```
 
 ### 主程式功能區塊

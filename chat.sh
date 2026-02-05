@@ -4,8 +4,9 @@
 # 範例：./chat.sh --rag docs/ --temperature 0.5
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-exec python3 "$SCRIPT_DIR/ollama-chat.py" \
+exec uv run python ollama-chat.py \
   --model qwen3-vl:8b \
   --stream \
   --system "總是以繁體中文回應訊息" \

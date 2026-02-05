@@ -44,14 +44,30 @@
 ollama-chat/
 ├── ollama-chat.py    # 主程式（~430 行）
 ├── pdf_loader.py     # PDF 讀取模組（~74 行）
-├── chat.sh           # Linux/macOS 啟動腳本
-├── chat.ps1          # PowerShell 啟動腳本
-├── chat.bat          # Windows Batch 啟動腳本
+├── pyproject.toml    # uv 依賴配置（版本 1.0.0）
+├── chat.sh           # Linux/macOS 啟動腳本（uv run）
+├── chat.ps1          # PowerShell 啟動腳本（uv run）
+├── chat.bat          # Windows Batch 啟動腳本（uv run）
 ├── CLAUDE.md         # Claude Code 開發指南
 ├── README.md         # 專案說明文檔
+├── HISTORY.md        # 版本變更歷史
 ├── LICENSE.txt       # MIT 授權
 └── docs/
     └── implementation.md  # 本文檔
+```
+
+### 執行環境
+
+本專案使用 [uv](https://docs.astral.sh/uv/) 管理 Python 依賴：
+
+```bash
+# 安裝依賴
+uv sync              # 基本安裝
+uv sync --extra pdf  # 含 PDF 支援
+
+# 執行程式
+./chat.sh                           # 使用啟動腳本（推薦）
+uv run python ollama-chat.py        # 手動執行
 ```
 
 ---

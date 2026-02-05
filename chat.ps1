@@ -3,12 +3,17 @@
 # 範例：.\chat.ps1 --rag docs/ --temperature 0.5
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+Push-Location $ScriptDir
 
-& python "$ScriptDir\ollama-chat.py" `
-  --model qwen3-vl:8b `
-  --stream `
-  --system "總是以繁體中文回應訊息" `
-  --fallback deepseek-r1:8b `
-  --fallback llama3.1:8b `
-  --autosave `
-  @args
+try {
+    uv run python ollama-chat.py `
+      --model qwen3-vl:8b `
+      --stream `
+      --system "總是以繁體中文回應訊息" `
+      --fallback deepseek-r1:8b `
+      --fallback llama3.1:8b `
+      --autosave `
+      @args
+} finally {
+    Pop-Location
+}
