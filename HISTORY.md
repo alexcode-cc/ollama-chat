@@ -7,6 +7,36 @@
 
 ---
 
+## [Unreleased]
+
+### 新增功能
+
+- **等待回應動畫**：送出對話後顯示旋轉的 Spinner 動畫（⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏）
+- **行編輯功能**：支援 readline，提供完整的命令行編輯體驗
+  - 方向鍵上/下：瀏覽輸入歷史
+  - 方向鍵左/右：移動游標
+  - Ctrl+A/Ctrl+E：移動到行首/行尾
+  - Ctrl+U/Ctrl+K：清除游標前/後內容
+  - Ctrl+W：刪除前一個單詞
+  - 輸入歷史自動保存至 `~/.ollama_chat_history`
+- **`/history-all` 指令**：顯示完整對話記錄
+- **`--load` 參數增強**：
+  - 載入對話記錄後自動顯示完整歷史
+  - 搭配 `--autosave` 時自動儲存至同一檔案
+  - 載入失敗時顯示友善錯誤訊息
+
+### 修正
+
+- 修正 `datetime.utcnow()` 棄用警告，改用 `datetime.now(timezone.utc)`
+- 修正載入不存在的歷史記錄檔案時的錯誤處理
+
+### 變更
+
+- 啟動腳本統一使用 `uv run` 執行
+- 新增 `pyreadline3` 為 Windows 可選依賴
+
+---
+
 ## [1.0.0] - 2026-02-05
 
 ### 新增功能
@@ -30,6 +60,7 @@
 - `/exit`, `/quit`：退出程式
 - `/clear`：清除對話歷史（保留 system prompt）
 - `/history`：顯示對話歷史摘要
+- `/history-all`：顯示完整對話記錄
 - `/redo`：重新生成最後一次回應
 - `/save [path]`：手動儲存對話
 - `/load <path>`：載入對話歷史
@@ -62,7 +93,9 @@
 
 - **Python 版本**：3.10+
 - **必要依賴**：requests
-- **可選依賴**：pypdf（PDF 支援）
+- **可選依賴**：
+  - pypdf（PDF 支援）
+  - pyreadline3（Windows 行編輯支援）
 - **Ollama 版本**：需本機運行 Ollama 服務（localhost:11434）
 
 ### 文件

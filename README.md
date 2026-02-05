@@ -6,8 +6,9 @@
 - 🔧 可調教生成參數（temperature / top_p / num_ctx）
 - 🛡 自動 fallback 模型（高可用）
 - 💾 聊天紀錄載入 / 存檔（JSON）
-- 📚 RAG（資料夾文件檢索，Markdown / TXT）
+- 📚 RAG（資料夾文件檢索，Markdown / TXT / PDF）
 - ⚡ Streaming 即時輸出
+- ⌨️ 完整行編輯功能（方向鍵、歷史記錄）
 
 > 適合：**資安研究、內部知識助理、專案顧問、離線 LLM 使用場景**
 
@@ -23,6 +24,8 @@
 | 歷史紀錄 | JSON 載入 / 存檔 / autosave |
 | RAG | 讀取資料夾文件並做 embedding 檢索 |
 | Streaming | Token 級即時輸出 |
+| 等待動畫 | 送出對話後顯示旋轉動畫 |
+| 行編輯 | 方向鍵、歷史瀏覽、快捷鍵 |
 
 ---
 
@@ -52,8 +55,14 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # 基本安裝
 uv sync
 
-# 完整安裝（含 PDF 支援）
+# 含 PDF 支援
 uv sync --extra pdf
+
+# Windows 行編輯支援
+uv sync --extra windows
+
+# 完整安裝
+uv sync --extra all
 ```
 
 ---

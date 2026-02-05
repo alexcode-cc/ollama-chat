@@ -10,8 +10,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # 安裝依賴（使用 uv）
-uv sync              # 基本安裝
-uv sync --extra pdf  # 含 PDF 支援
+uv sync                 # 基本安裝
+uv sync --extra pdf     # 含 PDF 支援
+uv sync --extra windows # Windows 行編輯支援
+uv sync --extra all     # 完整安裝
 
 # 快速啟動（推薦）
 ./chat.sh            # Linux / macOS
@@ -64,14 +66,15 @@ ollama-chat/
 
 ### 主程式功能區塊
 
-`ollama-chat.py` 包含 6 大功能區塊：
+`ollama-chat.py` 包含 7 大功能區塊：
 
 1. **Ollama 助手** - `get_installed_models()`, `build_options()` - 查詢模型與構建參數
 2. **Embedding & RAG** - `embed_text()`, `cosine_similarity()`, `chunk_text()`, `load_documents()`, `build_rag_index()`, `retrieve_context()` - 文本向量化與檢索
-3. **Chat API** - `chat_once()`, `chat_with_fallback()` - 對話請求與 fallback 機制
-4. **History** - `save_history()`, `load_history()` - 對話紀錄存取
-5. **Commands** - `cmd_*()` 系列函數 - 對話模式指令處理
-6. **交互式循環** - `interactive_chat()` - 主對話迴圈與指令分派
+3. **Spinner** - `Spinner` 類 - 等待回應時的旋轉動畫
+4. **Chat API** - `chat_once()`, `chat_with_fallback()` - 對話請求與 fallback 機制
+5. **History** - `save_history()`, `load_history()` - 對話紀錄存取
+6. **Commands** - `cmd_*()` 系列函數 - 對話模式指令處理
+7. **交互式循環** - `interactive_chat()` - 主對話迴圈與指令分派
 
 ### PDF Loader 模組
 
@@ -122,12 +125,27 @@ ollama-chat/
 | `/exit`, `/quit` | 退出程式 |
 | `/clear` | 清除對話歷史（保留 system prompt） |
 | `/history` | 顯示對話歷史摘要 |
+| `/history-all` | 顯示完整對話記錄 |
 | `/redo` | 重新生成最後一次回應 |
 | `/save [path]` | 儲存對話（可選路徑，預設時間戳） |
 | `/load <path>` | 載入對話歷史 |
 | `/model` | 顯示當前模型鏈 |
 | `/models` | 顯示所有可用模型 |
 | `/status` | 顯示當前狀態 |
+
+### 對話框快捷鍵
+
+支援 readline 行編輯功能（需 Linux/macOS 或 Windows + pyreadline3）：
+
+| 快捷鍵 | 功能 |
+|--------|------|
+| `↑` / `↓` | 瀏覽輸入歷史 |
+| `←` / `→` | 移動游標 |
+| `Ctrl+A` / `Ctrl+E` | 移動到行首/行尾 |
+| `Ctrl+U` / `Ctrl+K` | 清除游標前/後內容 |
+| `Ctrl+W` | 刪除前一個單詞 |
+
+輸入歷史自動保存至 `~/.ollama_chat_history`。
 
 ## 已知限制
 

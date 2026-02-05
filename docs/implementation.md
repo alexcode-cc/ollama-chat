@@ -35,6 +35,7 @@
 | 語言 | Python 3.10+ |
 | HTTP 客戶端 | requests |
 | PDF 解析 | pypdf（可選） |
+| 行編輯 | readline / pyreadline3（Windows） |
 | 向量化 | Ollama Embedding API |
 | 資料格式 | JSON |
 
@@ -62,8 +63,10 @@ ollama-chat/
 
 ```bash
 # 安裝依賴
-uv sync              # 基本安裝
-uv sync --extra pdf  # 含 PDF 支援
+uv sync                 # 基本安裝
+uv sync --extra pdf     # 含 PDF 支援
+uv sync --extra windows # Windows 行編輯支援
+uv sync --extra all     # 完整安裝
 
 # 執行程式
 ./chat.sh                           # 使用啟動腳本（推薦）
