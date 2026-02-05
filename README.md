@@ -186,6 +186,15 @@ uv run python ollama-chat.py --autosave
 }
 ```
 
+### 轉換為 CSV
+
+將 JSON 對話記錄轉換為 CSV 格式，方便後續應用（如 Excel、資料分析）：
+
+```bash
+uv run python ollama-chat.py --convert chats/session.json
+# 輸出：chats/session.csv
+```
+
 ---
 
 ## RAG（Retrieval-Augmented Generation）

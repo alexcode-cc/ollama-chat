@@ -114,6 +114,7 @@ ollama-chat/
 | `--save` | 儲存對話紀錄路徑 | 無 |
 | `--load` | 載入歷史對話路徑 | 無 |
 | `--autosave` | 每輪自動儲存 | False |
+| `--convert` | 將 JSON 對話記錄轉換為 CSV | 無 |
 
 ### 對話模式指令
 

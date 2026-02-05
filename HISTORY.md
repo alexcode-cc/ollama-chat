@@ -24,6 +24,7 @@
   - 載入對話記錄後自動顯示完整歷史
   - 搭配 `--autosave` 時自動儲存至同一檔案
   - 載入失敗時顯示友善錯誤訊息
+- **`--convert` 參數**：將 JSON 對話記錄轉換為 CSV 格式
 
 ### 修正
 
@@ -78,6 +79,10 @@
 - `--temperature`：生成溫度
 - `--top-p`：核心取樣比例
 - `--num-ctx`：Context window 大小
+- `--save`：儲存對話紀錄路徑
+- `--load`：載入歷史對話路徑
+- `--autosave`：每輪自動儲存
+- `--convert`：將 JSON 對話記錄轉換為 CSV
 
 #### 跨平台支援
 - `chat.sh`：Linux / macOS 快速啟動腳本
