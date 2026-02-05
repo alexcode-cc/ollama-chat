@@ -220,6 +220,7 @@ HELP_TEXT = """
 
   /clear           清除對話歷史（保留 system prompt）
   /history         顯示對話歷史摘要
+  /history-all     顯示完整對話記錄
   /redo            重新生成最後一次回應
 
   /save [path]     儲存對話（可選路徑，預設時間戳）
@@ -253,6 +254,38 @@ def cmd_history(messages: list):
         last = messages[-1]
         preview = last["content"][:50] + "..." if len(last["content"]) > 50 else last["content"]
         print(f"   最後一筆 [{last['role']}]: {preview}")
+
+
+def cmd_history_all(messages: list):
+    """顯示完整對話記錄"""
+    if not messages:
+        print("📭 目前沒有對話記錄")
+        return
+
+    print("=" * 60)
+    print("📜 完整對話記錄")
+    print("=" * 60)
+
+    for i, msg in enumerate(messages, 1):
+        role = msg["role"]
+        content = msg["content"]
+
+        if role == "system":
+            print(f"\n[{i}] 🔧 System:")
+            print(f"    {content[:200]}{'...' if len(content) > 200 else ''}")
+        elif role == "user":
+            print(f"\n[{i}] 🧑 User:")
+            print(f"    {content}")
+        elif role == "assistant":
+            print(f"\n[{i}] 🤖 Assistant:")
+            # 對於長回應，顯示前 500 字元
+            if len(content) > 500:
+                print(f"    {content[:500]}...")
+                print(f"    （共 {len(content)} 字元）")
+            else:
+                print(f"    {content}")
+
+    print("\n" + "=" * 60)
 
 
 def cmd_redo(messages: list, args, rag_index) -> tuple[list, str | None]:
@@ -338,6 +371,9 @@ def interactive_chat(args):
         print(f"📂 載入歷史紀錄：{args.load}")
         _, messages = load_history(args.load)
         print(f"✅ 載入 {len(messages)} 筆訊息")
+        # 顯示載入的對話記錄
+        if messages:
+            cmd_history_all(messages)
     else:
         messages = []
 
@@ -384,6 +420,8 @@ def interactive_chat(args):
                 messages = cmd_clear(messages, system_prompt)
             elif cmd == "/history":
                 cmd_history(messages)
+            elif cmd == "/history-all":
+                cmd_history_all(messages)
             elif cmd == "/redo":
                 messages, reply = cmd_redo(messages, args, rag_index)
                 if reply and args.autosave and args.save:
@@ -458,7 +496,11 @@ def main():
     args = parser.parse_args()
 
     if args.autosave and not args.save:
-        args.save = Path("chats") / (datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".json")
+        if args.load:
+            # 使用 --load 時，autosave 儲存到同一檔案
+            args.save = args.load
+        else:
+            args.save = Path("chats") / (datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".json")
 
     installed = set(get_installed_models())
     chain = [args.model] + args.fallback
