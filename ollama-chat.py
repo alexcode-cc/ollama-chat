@@ -7,7 +7,7 @@ import math
 import threading
 import time
 from typing import Optional, List, Dict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -364,16 +364,30 @@ def interactive_chat(args):
     meta = {
         "model_chain": args.model_chain,
         "options": args.options,
-        "created_at": datetime.utcnow().isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
     }
 
     if args.load:
         print(f"📂 載入歷史紀錄：{args.load}")
-        _, messages = load_history(args.load)
-        print(f"✅ 載入 {len(messages)} 筆訊息")
-        # 顯示載入的對話記錄
-        if messages:
-            cmd_history_all(messages)
+        if not args.load.exists():
+            print(f"❌ 檔案不存在：{args.load}")
+            print("💡 將以空白對話開始")
+            messages = []
+        else:
+            try:
+                _, messages = load_history(args.load)
+                print(f"✅ 載入 {len(messages)} 筆訊息")
+                # 顯示載入的對話記錄
+                if messages:
+                    cmd_history_all(messages)
+            except json.JSONDecodeError as e:
+                print(f"❌ 檔案格式錯誤：{e}")
+                print("💡 將以空白對話開始")
+                messages = []
+            except Exception as e:
+                print(f"❌ 載入失敗：{e}")
+                print("💡 將以空白對話開始")
+                messages = []
     else:
         messages = []
 
