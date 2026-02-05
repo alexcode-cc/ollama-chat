@@ -535,11 +535,28 @@ def interactive_chat(args):
 # ---------- Main ----------
 
 def main():
-    parser = argparse.ArgumentParser(description="Ollama Chat CLI with RAG")
+    parser = argparse.ArgumentParser(
+        description="Ollama Chat CLI with RAG",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+覆蓋預設參數範例（搭配啟動腳本使用）：
+  chat.sh --model deepseek-r1:8b      # 覆蓋預設模型
+  chat.sh --no-stream                 # 取消 streaming
+  chat.sh --no-autosave               # 取消自動儲存
+  chat.sh --system "新的提示詞"       # 覆蓋系統提示詞
+  chat.sh --no-default-fallback       # 不使用預設 fallback 模型
+        """,
+    )
 
     parser.add_argument("--model", default="llama3.1:8b")
-    parser.add_argument("--fallback", action="append", default=[])
-    parser.add_argument("--stream", action="store_true")
+    parser.add_argument("--fallback", action="append", default=[],
+                        help="備援模型（可多個，追加到預設值之後）")
+    parser.add_argument("--default-fallback", action="append", default=[],
+                        help="預設備援模型（由啟動腳本設定）")
+    parser.add_argument("--no-default-fallback", action="store_true",
+                        help="不使用預設 fallback 模型")
+    parser.add_argument("--stream", action=argparse.BooleanOptionalAction, default=False,
+                        help="啟用/停用流式輸出（--stream / --no-stream）")
     parser.add_argument("--system")
 
     parser.add_argument("--rag", type=Path, help="RAG document folder")
@@ -551,10 +568,15 @@ def main():
 
     parser.add_argument("--save", type=Path, help="儲存對話紀錄路徑")
     parser.add_argument("--load", type=Path, help="載入歷史對話路徑")
-    parser.add_argument("--autosave", action="store_true", help="每輪自動儲存")
+    parser.add_argument("--autosave", action=argparse.BooleanOptionalAction, default=False,
+                        help="啟用/停用每輪自動儲存（--autosave / --no-autosave）")
     parser.add_argument("--convert", type=Path, help="將 JSON 對話記錄轉換為 CSV")
 
     args = parser.parse_args()
+
+    # 合併 fallback：用戶指定的 + 預設的（除非指定 --no-default-fallback）
+    if not args.no_default_fallback:
+        args.fallback = args.fallback + args.default_fallback
 
     # 處理 --convert 參數（轉換後直接退出）
     if args.convert:
