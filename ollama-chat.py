@@ -8,6 +8,7 @@ import threading
 import time
 import atexit
 import csv
+import re
 from typing import Optional, List, Dict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -568,16 +569,22 @@ def main():
             sys.exit(1)
         return
 
+    installed = set(get_installed_models())
+    chain = [args.model] + args.fallback
+    args.model_chain = [m for m in chain if m in installed]
+
+    # 處理 autosave 預設路徑
     if args.autosave and not args.save:
         if args.load:
             # 使用 --load 時，autosave 儲存到同一檔案
             args.save = args.load
         else:
-            args.save = Path("chats") / (datetime.now().strftime("%Y-%m-%d-%H-%M-%S") + ".json")
-
-    installed = set(get_installed_models())
-    chain = [args.model] + args.fallback
-    args.model_chain = [m for m in chain if m in installed]
+            # 使用模型名稱 + 時間戳作為檔名
+            model_name = args.model_chain[0] if args.model_chain else args.model
+            # 清理模型名稱中的不合法字元
+            safe_model_name = re.sub(r'[:\\/*?"<>|]', '-', model_name)
+            timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            args.save = Path("chats") / f"{safe_model_name}_{timestamp}.json"
 
     args.options = build_options(
         args.temperature,
