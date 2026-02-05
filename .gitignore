@@ -49,6 +49,9 @@ htmlcov/
 logs/
 *.log
 
+# chats
+chats/
+
 # Local config
 .env.local
 config.local.py
